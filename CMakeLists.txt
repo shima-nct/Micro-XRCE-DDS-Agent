@@ -38,7 +38,7 @@ option(UAGENT_SOCKETCAN_PROFILE "Build Agent CAN FD transport." ON)
 option(UAGENT_LOGGER_PROFILE "Build logger profile." ON)
 option(UAGENT_SECURITY_PROFILE "Build security profile." OFF)
 option(UAGENT_BUILD_EXECUTABLE "Build Micro XRCE-DDS Agent provided executable." ON)
-option(UAGENT_BUILD_USAGE_EXAMPLES "Build Micro XRCE-DDS Agent built-in usage examples" OFF)
+option(UAGENT_BUILD_USAGE_EXAMPLES "Build Micro XRCE-DDS Agent built-in usage examples" ON)
 
 set(UAGENT_P2P_CLIENT_VERSION 2.4.1 CACHE STRING "Sets Micro XRCE-DDS client version for P2P")
 set(UAGENT_P2P_CLIENT_TAG v2.4.1 CACHE STRING "Sets Micro XRCE-DDS client tag for P2P")

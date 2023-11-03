@@ -13,18 +13,22 @@
 # limitations under the License.
 if (UAGENT_BUILD_USAGE_EXAMPLES)
     add_executable(CustomXRCEAgent custom_agent.cpp)
-    target_link_libraries(CustomXRCEAgent
-        PRIVATE
-            ${PROJECT_NAME}
-            $<$<BOOL:$<PLATFORM_ID:Linux>>:rt>
-            $<$<BOOL:$<PLATFORM_ID:Linux>>:dl>
-        )
+    add_executable(SerialCustomXRCEAgent serial_custom_agent.cpp)
+    set(EXECUTABLES CustomXRCEAgent SerialCustomXRCEAgent)
+    foreach(EXECUTABLE IN LISTS EXECUTABLES)
+        target_link_libraries(${EXECUTABLE} 
+            PRIVATE
+                ${PROJECT_NAME}
+                $<$<BOOL:$<PLATFORM_ID:Linux>>:rt>
+                $<$<BOOL:$<PLATFORM_ID:Linux>>:dl>
+            )
 
-    set_target_properties(CustomXRCEAgent
-        PROPERTIES
-            CXX_STANDARD
-                11
-            CXX_STANDARD_REQUIRED
-                YES
-        )
+        set_target_properties(${EXECUTABLE} 
+            PROPERTIES
+                CXX_STANDARD
+                    11
+                CXX_STANDARD_REQUIRED
+                    YES
+            )
+    endforeach()
 endif()
