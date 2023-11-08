@@ -14,6 +14,8 @@
 
 #include <uxr/agent/transport/custom/CustomAgent.hpp>
 #include <uxr/agent/transport/endpoint/IPv4EndPoint.hpp>
+#include <uxr/agent/utils/ArgumentParser.hpp>
+#include <uxr/agent/transport/serial/TermiosAgentLinux.hpp>
 
 #include <poll.h>
 #include <sys/socket.h>
@@ -36,106 +38,100 @@
  * Other transport protocols might need to implement their own endpoint struct.
  */
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-  const char* device_name = nullptr;
-  speed_t baud = B9600;
-
-  int opt;
-  while ((opt = getopt(argc, argv, "D:b:")) != -1)
+  eprosima::uxr::agent::parser::ArgumentParser<eprosima::uxr::TermiosAgent> argparser(argc, argv, eprosima::uxr::agent::TransportKind::SERIAL);
+  eprosima::uxr::agent::parser::ParseResult parse_result = argparser.parse_arguments();
+  eprosima::uxr::agent::parser::SerialArgs<eprosima::uxr::TermiosAgent> serial_args;
+  const char *default_args[] = {"-D", "/dev/ttyS0", "-b", "9600"};
+  char **default_argv = const_cast<char **>(default_args);
+  int default_argc = 0;
+  while (default_args[default_argc] != nullptr)
   {
-    switch (opt)
-    {
-      case 'D':
-        device_name = optarg;
-        break;
-      case 'b': {
-        int baud_rate = std::stoi(optarg);
-        switch (baud_rate)
-        {
-          case 9600:
-            baud = B9600;
-            break;
-          case 19200:
-            baud = B19200;
-            break;
-          case 38400:
-            baud = B38400;
-            break;
-          // 他のボーレートに対するケースもここに追加
-          default:
-            std::cerr << "Unsupported baud rate: " << baud_rate << std::endl;
-            return 1;
-        }
-        break;
-      }
-      default:
-        std::cerr << "Usage: " << argv[0] << " -D <device> -b <baud rate>" << std::endl;
-        return 1;
-    }
+    ++default_argc;
   }
-
-  if (device_name == nullptr)
-  {
-    std::cerr << "Device name is required." << std::endl;
-    return 1;
-  }
+  serial_args.parse(default_argc, default_argv);
+  bool is_serial_args = serial_args.parse(argc, argv);
+  termios attrs = argparser.init_termios(serial_args.baud_rate().c_str());
 
   eprosima::uxr::Middleware::Kind mw_kind(eprosima::uxr::Middleware::Kind::FASTDDS);
-  uint16_t agent_port(8888);
 
   struct pollfd poll_fd;
 
   /**
    * @brief Agent's initialization behaviour description.
    */
-  eprosima::uxr::CustomAgent::InitFunction init_function = [&]() -> bool {
+  eprosima::uxr::CustomAgent::InitFunction init_function = [&]() -> bool
+  {
     bool rv = false;
-    poll_fd.fd = open(device_name, O_RDWR | O_NOCTTY | O_SYNC);
+    poll_fd.fd = open(serial_args.dev().c_str(), O_RDWR | O_NOCTTY);
 
-    if (-1 != poll_fd.fd)
+    if (0 < poll_fd.fd)
     {
-      struct termios tty
+      struct termios new_attrs;
+      memset(&new_attrs, 0, sizeof(new_attrs));
+      if (0 == tcgetattr(poll_fd.fd, &new_attrs))
       {
-      };
-      memset(&tty, 0, sizeof tty);
+        new_attrs.c_cflag = attrs.c_cflag;
+        new_attrs.c_lflag = attrs.c_lflag;
+        new_attrs.c_iflag = attrs.c_iflag;
+        new_attrs.c_oflag = attrs.c_oflag;
+        // new_attrs.c_cc[VMIN] = attrs.c_cc[VMIN];
+        // new_attrs.c_cc[VTIME] = attrs.c_cc[VTIME];
+        new_attrs.c_cc[VMIN] = 64;
+        new_attrs.c_cc[VTIME] = 5;
 
-      if (tcgetattr(poll_fd.fd, &tty) == 0)
-      {
-        cfsetospeed(&tty, baud);
-        cfsetispeed(&tty, baud);
+#if _HAVE_STRUCT_TERMIOS_C_ISPEED
+        cfsetispeed(&new_attrs, attrs.c_ispeed);
+#endif
+#if _HAVE_STRUCT_TERMIOS_C_OSPEED
+        cfsetospeed(&new_attrs, attrs.c_ospeed);
+#endif
 
-        tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;  // 8-bit chars
-        tty.c_iflag &= ~IGNBRK;                      // disable break processing
-        tty.c_lflag = 0;                             // no signaling chars, no echo, no canonical processing
-        tty.c_oflag = 0;                             // no remapping, no delays
-        tty.c_cc[VMIN] = 0;                          // read doesn't block
-        tty.c_cc[VTIME] = 5;                         // 0.5 seconds read timeout
-
-        tty.c_iflag &= ~(IXON | IXOFF | IXANY);  // shut off xon/xoff ctrl
-
-        tty.c_cflag |= (CLOCAL | CREAD);    // ignore modem controls,
-                                            // enable reading
-        tty.c_cflag &= ~(PARENB | PARODD);  // shut off parity
-        tty.c_cflag |= 0;
-        tty.c_cflag &= ~CSTOPB;
-        tty.c_cflag &= ~CRTSCTS;
-
-        if (tcsetattr(poll_fd.fd, TCSANOW, &tty) == 0)
+        if (0 == tcsetattr(poll_fd.fd, TCSANOW, &new_attrs))
         {
-          poll_fd.events = POLLIN;
           rv = true;
+          poll_fd.events = POLLIN;
 
-          UXR_AGENT_LOG_INFO(UXR_DECORATE_GREEN("This is an example of a custom Micro XRCE-DDS Agent INIT function"),
-                             "Serial port: "
-                             "/dev/ttyUSB0 "
-                             "is now open "
-                             "with 9600 "
-                             "bps.",
-                             NULL);
+          tcflush(poll_fd.fd, TCIOFLUSH);
+
+          UXR_AGENT_LOG_INFO(
+              UXR_DECORATE_GREEN("running..."),
+              "fd: {}",
+              poll_fd.fd);
+        }
+        else
+        {
+          UXR_AGENT_LOG_ERROR(
+              UXR_DECORATE_RED("set termios attributes error"),
+              "errno: {}",
+              errno);
         }
       }
+      else
+      {
+        UXR_AGENT_LOG_ERROR(
+            UXR_DECORATE_RED("get termios attributes error"),
+            "errno: {}",
+            errno);
+      }
     }
+    else
+    {
+      UXR_AGENT_LOG_ERROR(
+          UXR_DECORATE_RED("open device error"),
+          "device: {}, errno: {}{}",
+          serial_args.dev(), errno,
+          (EACCES == errno) ? ". Please re-run with superuser privileges." : "");
+    }
+
+    UXR_AGENT_LOG_INFO(UXR_DECORATE_GREEN("This is an example of a custom Micro XRCE-DDS Agent INIT function"),
+                       "Serial port: " + serial_args.dev() +
+                           " is now open "
+                           "with " +
+                           serial_args.baud_rate().c_str() +
+                           " bps.",
+                       NULL);
 
     return rv;
   };
@@ -143,7 +139,8 @@ int main(int argc, char** argv)
   /**
    * @brief Agent's destruction actions.
    */
-  eprosima::uxr::CustomAgent::FiniFunction fini_function = [&]() -> bool {
+  eprosima::uxr::CustomAgent::FiniFunction fini_function = [&]() -> bool
+  {
     if (-1 == poll_fd.fd)
     {
       return true;
@@ -153,7 +150,7 @@ int main(int argc, char** argv)
     {
       poll_fd.fd = -1;
       UXR_AGENT_LOG_INFO(UXR_DECORATE_GREEN("This is an example of a custom Micro XRCE-DDS Agent FINI function"),
-                         "Serial port: ", device_name);
+                         "Serial port: ", serial_args.dev());
 
       return true;
     }
@@ -167,45 +164,55 @@ int main(int argc, char** argv)
    * @brief Agent's incoming data functionality.
    */
   eprosima::uxr::CustomAgent::RecvMsgFunction recv_msg_function =
-      [&](eprosima::uxr::CustomEndPoint* source_endpoint, uint8_t* buffer, size_t buffer_length, int timeout,
-          eprosima::uxr::TransportRc& transport_rc) -> ssize_t {
-    ssize_t bytes_received = -1;
+      [&](eprosima::uxr::CustomEndPoint *source_endpoint, uint8_t *buffer, size_t buffer_length, int timeout,
+          eprosima::uxr::TransportRc &transport_rc) -> ssize_t
+  {
+    ssize_t bytes_read = 0;
     int poll_rv = poll(&poll_fd, 1, timeout);
-
-    if (0 < poll_rv)
+    if (poll_fd.revents & (POLLERR + POLLHUP))
     {
-      bytes_received = read(poll_fd.fd, buffer, buffer_length);
-      transport_rc = (-1 != bytes_received) ? eprosima::uxr::TransportRc::ok : eprosima::uxr::TransportRc::server_error;
+      transport_rc = eprosima::uxr::TransportRc::server_error;
+      ;
+    }
+    else if (0 < poll_rv)
+    {
+      bytes_read = read(poll_fd.fd, buffer, buffer_length);
+      if (0 > bytes_read)
+      {
+        transport_rc = eprosima::uxr::TransportRc::server_error;
+      }
     }
     else
     {
-      transport_rc =
-          (0 == poll_rv) ? eprosima::uxr::TransportRc::timeout_error : eprosima::uxr::TransportRc::server_error;
-      bytes_received = 0;
+      transport_rc = (poll_rv == 0) ? eprosima::uxr::TransportRc::timeout_error : eprosima::uxr::TransportRc::server_error;
     }
 
     if (eprosima::uxr::TransportRc::ok == transport_rc)
     {
-      UXR_AGENT_LOG_INFO(UXR_DECORATE_GREEN("This is an example of a custom Micro XRCE-DDS Agent RECV_MSG function"),
-                         "Serial port: ", device_name);
+      UXR_AGENT_LOG_INFO(
+          UXR_DECORATE_GREEN(
+              "This is an example of a custom Micro XRCE-DDS Agent RECV_MSG function"),
+          "Serial port: {}",
+          serial_args.dev());
     }
 
-    return bytes_received;
+    return bytes_read;
   };
 
   /**
    * @brief Agent's outgoing data flow definition.
    */
   eprosima::uxr::CustomAgent::SendMsgFunction send_msg_function =
-      [&](const eprosima::uxr::CustomEndPoint* destination_endpoint, uint8_t* buffer, size_t message_length,
-          eprosima::uxr::TransportRc& transport_rc) -> ssize_t {
+      [&](const eprosima::uxr::CustomEndPoint *destination_endpoint, uint8_t *buffer, size_t message_length,
+          eprosima::uxr::TransportRc &transport_rc) -> ssize_t
+  {
     ssize_t bytes_sent = write(poll_fd.fd, buffer, message_length);
     transport_rc = (-1 != bytes_sent) ? eprosima::uxr::TransportRc::ok : eprosima::uxr::TransportRc::server_error;
 
     if (eprosima::uxr::TransportRc::ok == transport_rc)
     {
       UXR_AGENT_LOG_INFO(UXR_DECORATE_GREEN("This is an example of a custom Micro XRCE-DDS Agent SEND_MSG function"),
-                         "Serial port: ", device_name);
+                         "Serial port: {}", serial_args.dev());
     }
 
     return bytes_sent;
@@ -247,7 +254,7 @@ int main(int argc, char** argv)
     custom_agent.stop();
     return 0;
   }
-  catch (const std::exception& e)
+  catch (const std::exception &e)
   {
     std::cout << e.what() << std::endl;
     return 1;
