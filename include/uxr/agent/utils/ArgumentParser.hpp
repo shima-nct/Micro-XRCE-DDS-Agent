@@ -37,6 +37,7 @@
 #include <uxr/agent/transport/serial/TermiosAgentLinux.hpp>
 #include <uxr/agent/transport/serial/MultiTermiosAgentLinux.hpp>
 #include <uxr/agent/transport/serial/PseudoTerminalAgentLinux.hpp>
+#include <uxr/agent/transport/serial/LLCC68Agent.hpp>
 #include <uxr/agent/transport/serial/baud_rate_table_linux.h>
 
 #ifdef UAGENT_SOCKETCAN_PROFILE
@@ -71,6 +72,7 @@ enum class TransportKind
     SERIAL,
     MULTISERIAL,
     PSEUDOTERMINAL,
+    LLCC68,
 #endif // _WIN32
     HELP
 };
@@ -1002,6 +1004,11 @@ public:
                 result &= pseudoterminal_args_.parse(argc_, argv_);
                 break;
             }
+            case TransportKind::LLCC68:
+            {
+                result &= serial_args_.parse(argc_, argv_);
+                break;
+            }
 #endif // _WIN32
             case TransportKind::INVALID:
             default:
@@ -1089,7 +1096,7 @@ public:
         ss << "  * IPvX (udp4, udp6, tcp4, tcp6)" << std::endl;
         ss << ip_args_.get_help();
 #ifndef _WIN32
-        ss << "  * SERIAL (serial, multiserial, pseudoterminal)" << std::endl;
+        ss << "  * SERIAL (serial, multiserial, pseudoterminal, llcc68)" << std::endl;
         ss << pseudoterminal_args_.get_help();
         ss << serial_args_.get_help();
 #ifdef UAGENT_SOCKETCAN_PROFILE
