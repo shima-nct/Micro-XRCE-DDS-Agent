@@ -1183,6 +1183,25 @@ template<> inline bool ArgumentParser<PseudoTerminalAgent>::launch_agent()
 
     return false;
 }
+template<> inline bool ArgumentParser<LLCC68Agent>::launch_agent()
+{
+    struct termios attr = init_termios(serial_args_.baud_rate().c_str());
+    
+    agent_server_.reset(new LLCC68Agent(
+        serial_args_.dev().c_str(),  O_RDWR | O_NOCTTY, attr, 0, utils::get_mw_kind(common_args_.middleware())));
+
+    if (agent_server_->start())
+    {
+        common_args_.apply_actions(agent_server_);
+        return true;
+    }
+    else
+    {
+        std::cerr << "Error while starting serial agent!" << std::endl;
+    }
+
+    return false;
+}
 
 #ifdef UAGENT_SOCKETCAN_PROFILE
 template<> inline bool ArgumentParser<CanAgent>::launch_agent()
