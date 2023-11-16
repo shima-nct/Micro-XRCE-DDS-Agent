@@ -30,6 +30,7 @@
  */
 
 #include "LoRa_E220.h"
+#include <vector>
 
 #ifdef ACTIVATE_SOFTWARE_SERIAL
 LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, UART_BPS_RATE bpsRate){
@@ -311,13 +312,13 @@ Status LoRa_E220::waitCompleteResponse(unsigned long timeout, unsigned int waitN
 		// if you can't use aux pin, use 4K7 pullup with Arduino
 		// you may need to adjust this value if transmissions fail
 		this->managedDelay(waitNoAux);
-		DEBUG_PRINTLN(F("Wait no AUX pin!"));
+		DEBUG_PRINTLN(F_("Wait no AUX pin!"));
 	}
 
 
 	// per data sheet control after aux goes high is 2ms so delay for at least that long)
 	this->managedDelay(20);
-	DEBUG_PRINTLN(F("Complete!"));
+	DEBUG_PRINTLN(F_("Complete!"));
 	return result;
 }
 
@@ -421,9 +422,9 @@ Status LoRa_E220::sendStruct(void *structureManaged, uint16_t size_) {
 
 		uint8_t len = this->serialDef.stream->write((uint8_t *) structureManaged, size_);
 		if (len!=size_){
-			DEBUG_PRINT(F("Send... len:"))
+			DEBUG_PRINT(F_("Send... len:"))
 			DEBUG_PRINT(len);
-			DEBUG_PRINT(F(" size:"))
+			DEBUG_PRINT(F_(" size:"))
 			DEBUG_PRINT(size_);
 			if (len==0){
 				result = ERR_E220_NO_RESPONSE_FROM_DEVICE;
@@ -435,10 +436,10 @@ Status LoRa_E220::sendStruct(void *structureManaged, uint16_t size_) {
 
 		result = this->waitCompleteResponse(5000, 5000);
 		if (result != E220_SUCCESS) return result;
-        DEBUG_PRINT(F("Clear buffer..."))
+        DEBUG_PRINT(F_("Clear buffer..."))
         this->cleanUARTBuffer();
 
-		DEBUG_PRINTLN(F("ok!"))
+		DEBUG_PRINTLN(F_("ok!"))
 
 		return result;
 }
@@ -497,7 +498,7 @@ Status LoRa_E220::setMode(MODE_TYPE mode) {
 	this->managedDelay(40);
 
 	if (this->m0Pin == -1 && this->m1Pin == -1) {
-		DEBUG_PRINTLN(F("The M0 and M1 pins is not set, this mean that you are connect directly the pins as you need!"))
+		DEBUG_PRINTLN(F_("The M0 and M1 pins is not set, this mean that you are connect directly the pins as you need!"))
 	}else{
 		switch (mode)
 		{
@@ -682,12 +683,12 @@ ResponseStructContainer LoRa_E220::getModuleInformation(){
 	}
 
 	DEBUG_PRINTLN("----------------------------------------");
-	DEBUG_PRINT(F("HEAD: "));  DEBUG_PRINT(((ModuleInformation *)rc.data)->COMMAND, BIN);DEBUG_PRINT(" ");DEBUG_PRINT(((ModuleInformation *)rc.data)->STARTING_ADDRESS, DEC);DEBUG_PRINT(" ");DEBUG_PRINTLN(((ModuleInformation *)rc.data)->LENGHT, HEX);
+	DEBUG_PRINT(F_("HEAD: "));  DEBUG_PRINT(((ModuleInformation *)rc.data)->COMMAND, BIN);DEBUG_PRINT(" ");DEBUG_PRINT(((ModuleInformation *)rc.data)->STARTING_ADDRESS, DEC);DEBUG_PRINT(" ");DEBUG_PRINTLN(((ModuleInformation *)rc.data)->LENGHT, HEX);
 
-	DEBUG_PRINT(F("Model no.: "));  DEBUG_PRINTLN(((ModuleInformation *)rc.data)->model, HEX);
-	DEBUG_PRINT(F("Version  : "));  DEBUG_PRINTLN(((ModuleInformation *)rc.data)->version, HEX);
-	DEBUG_PRINT(F("Features : "));  DEBUG_PRINTLN(((ModuleInformation *)rc.data)->features, HEX);
-	DEBUG_PRINT(F("Status : "));  DEBUG_PRINTLN(rc.status.getResponseDescription());
+	DEBUG_PRINT(F_("Model no.: "));  DEBUG_PRINTLN(((ModuleInformation *)rc.data)->model, HEX);
+	DEBUG_PRINT(F_("Version  : "));  DEBUG_PRINTLN(((ModuleInformation *)rc.data)->version, HEX);
+	DEBUG_PRINT(F_("Features : "));  DEBUG_PRINTLN(((ModuleInformation *)rc.data)->features, HEX);
+	DEBUG_PRINT(F_("Status : "));  DEBUG_PRINTLN(rc.status.getResponseDescription());
 	DEBUG_PRINTLN("----------------------------------------");
 
 //	if (rc.status.code!=E220_SUCCESS) return rc;
@@ -722,7 +723,7 @@ ResponseStatus LoRa_E220::resetModule(){
 //	if (status.code!=E220_SUCCESS) return status;
 //
 //	return status;
-	DEBUG_PRINT(F("No information to reset module!"));
+	DEBUG_PRINT(F_("No information to reset module!"));
 	ResponseStatus status;
 	status.code = ERR_E220_NOT_IMPLEMENT;
 	return status;
@@ -826,14 +827,14 @@ ResponseStatus LoRa_E220::sendMessage(const void *message, const uint8_t size){
 	return status;
 }
 ResponseStatus LoRa_E220::sendMessage(const String message){
-	DEBUG_PRINT(F("Send message: "));
+	DEBUG_PRINT(F_("Send message: "));
 	DEBUG_PRINT(message);
 	byte size = message.length(); // sizeof(message.c_str())+1;
-	DEBUG_PRINT(F(" size: "));
+	DEBUG_PRINT(F_(" size: "));
 	DEBUG_PRINTLN(size);
 	char messageFixed[size];
 	memcpy(messageFixed,message.c_str(),size);
-	DEBUG_PRINTLN(F(" memcpy "));
+	DEBUG_PRINTLN(F_(" memcpy "));
 
 	ResponseStatus status;
 	status.code = this->sendStruct((uint8_t *)&messageFixed, size);
@@ -887,7 +888,7 @@ typedef struct fixedStransmission
 	byte ADDH = 0;
 	byte ADDL = 0;
 	byte CHAN = 0;
-	unsigned char message[];
+	std::vector<unsigned char> message;
 }FixedStransmission;
 
 FixedStransmission *init_stack(int m){
