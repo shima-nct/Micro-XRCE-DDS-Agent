@@ -30,6 +30,11 @@ LLCC68Agent::LLCC68Agent(
     , dev_{dev}
     , open_flags_{open_flags}
     , termios_attrs_{termios_attrs}
+    , addr{18030}
+    , ADDH{(addr >> 8) & 0xFF}
+    , ADDL{addr & 0xFF}
+    , CHAN{28}
+    , lora_e220_(&Serial1)
 {
 }
 
@@ -88,54 +93,57 @@ bool LLCC68Agent::init()
     }
     while (serial_exist != 0);
 
-    poll_fd_.fd = open(dev_.c_str(), open_flags_);
+    // poll_fd_.fd = open(dev_.c_str(), open_flags_);
+    poll_fd_.fd = Serial1.open(dev_.c_str(), termios_attrs_.c_ispeed);
+    lora_e220_.begin();
     if (0 < poll_fd_.fd)
     {
-        struct termios new_attrs;
-        memset(&new_attrs, 0, sizeof(new_attrs));
-        if (0 == tcgetattr(poll_fd_.fd, &new_attrs))
-        {
-            new_attrs.c_cflag = termios_attrs_.c_cflag;
-            new_attrs.c_lflag = termios_attrs_.c_lflag;
-            new_attrs.c_iflag = termios_attrs_.c_iflag;
-            new_attrs.c_oflag = termios_attrs_.c_oflag;
-            new_attrs.c_cc[VMIN] = termios_attrs_.c_cc[VMIN];
-            new_attrs.c_cc[VTIME] = termios_attrs_.c_cc[VTIME];
+         rv = true;
+//         struct termios new_attrs;
+//         memset(&new_attrs, 0, sizeof(new_attrs));
+//         if (0 == tcgetattr(poll_fd_.fd, &new_attrs))
+//         {
+//             new_attrs.c_cflag = termios_attrs_.c_cflag;
+//             new_attrs.c_lflag = termios_attrs_.c_lflag;
+//             new_attrs.c_iflag = termios_attrs_.c_iflag;
+//             new_attrs.c_oflag = termios_attrs_.c_oflag;
+//             new_attrs.c_cc[VMIN] = termios_attrs_.c_cc[VMIN];
+//             new_attrs.c_cc[VTIME] = termios_attrs_.c_cc[VTIME];
 
-#if _HAVE_STRUCT_TERMIOS_C_ISPEED || __APPLE__
-            cfsetispeed(&new_attrs, termios_attrs_.c_ispeed);
-#endif
-#if _HAVE_STRUCT_TERMIOS_C_OSPEED || __APPLE__
-            cfsetospeed(&new_attrs, termios_attrs_.c_ospeed);
-#endif
+// #if _HAVE_STRUCT_TERMIOS_C_ISPEED || __APPLE__
+//             cfsetispeed(&new_attrs, termios_attrs_.c_ispeed);
+// #endif
+// #if _HAVE_STRUCT_TERMIOS_C_OSPEED || __APPLE__
+//             cfsetospeed(&new_attrs, termios_attrs_.c_ospeed);
+// #endif
 
-            if (0 == tcsetattr(poll_fd_.fd, TCSANOW, &new_attrs))
-            {
-                rv = true;
-                poll_fd_.events = POLLIN;
+//             if (0 == tcsetattr(poll_fd_.fd, TCSANOW, &new_attrs))
+//             {
+//                 rv = true;
+//                 poll_fd_.events = POLLIN;
 
-                tcflush(poll_fd_.fd, TCIOFLUSH);
+//                 tcflush(poll_fd_.fd, TCIOFLUSH);
 
-                UXR_AGENT_LOG_INFO(
-                    UXR_DECORATE_GREEN("running..."),
-                    "fd: {}",
-                    poll_fd_.fd);
-            }
-            else
-            {
-                UXR_AGENT_LOG_ERROR(
-                    UXR_DECORATE_RED("set termios attributes error"),
-                    "errno: {}",
-                    errno);
-            }
-        }
-        else
-        {
-            UXR_AGENT_LOG_ERROR(
-                UXR_DECORATE_RED("get termios attributes error"),
-                "errno: {}",
-                errno);
-        }
+//                 UXR_AGENT_LOG_INFO(
+//                     UXR_DECORATE_GREEN("running..."),
+//                     "fd: {}",
+//                     poll_fd_.fd);
+//             }
+//             else
+//             {
+//                 UXR_AGENT_LOG_ERROR(
+//                     UXR_DECORATE_RED("set termios attributes error"),
+//                     "errno: {}",
+//                     errno);
+//             }
+//         }
+//         else
+//         {
+//             UXR_AGENT_LOG_ERROR(
+//                 UXR_DECORATE_RED("get termios attributes error"),
+//                 "errno: {}",
+//                 errno);
+//         }
     }
     else
     {
@@ -156,7 +164,9 @@ bool LLCC68Agent::fini()
     }
 
     bool rv = false;
-    if (0 == ::close(poll_fd_.fd))
+    Serial1.end();
+    poll_fd_.fd = Serial1.getFd();
+    if (0 > poll_fd_.fd)
     {
         UXR_AGENT_LOG_INFO(
             UXR_DECORATE_GREEN("server stopped"),
@@ -174,6 +184,64 @@ bool LLCC68Agent::fini()
 
     poll_fd_.fd = -1;
     return rv;
+}
+
+ssize_t LLCC68Agent::write_data(
+        uint8_t* buf,
+        size_t len,
+        TransportRc& transport_rc)
+{
+    size_t rv = 0;
+    // ssize_t bytes_written = ::write(poll_fd_.fd, buf, len);
+    ResponseStatus rs = lora_e220_.sendFixedMessage(ADDH, ADDL, CHAN, (void *)buf, len);
+
+    // if (0 < bytes_written)
+    if (E220_SUCCESS == rs.code)
+    {
+        rv = len;
+    }
+    else
+    {
+        transport_rc = TransportRc::server_error;
+    }
+    return rv;
+}
+
+ssize_t LLCC68Agent::read_data(
+        uint8_t* buf,
+        size_t len,
+        int timeout,
+        TransportRc& transport_rc)
+{
+    ssize_t bytes_read = 0;
+    int poll_rv = poll(&poll_fd_, 1, timeout);
+    if(poll_fd_.revents & (POLLERR+POLLHUP))
+    {
+        transport_rc = TransportRc::server_error;;
+    }
+    else if (0 < poll_rv && lora_e220_.available() > 0)
+    {
+        // bytes_read = read(poll_fd_.fd, buf, len);
+        ResponseContainer rsc = lora_e220_.receiveMessage();
+        bytes_read = rsc.data.length();
+        // if (0 > bytes_read)
+        // {
+        //     transport_rc = TransportRc::server_error;
+        // }
+        if (E220_SUCCESS == rsc.status.code)
+        {
+            rsc.data.getBytes(buf, bytes_read);
+        }
+        else
+        {
+            transport_rc = TransportRc::server_error;
+        }
+    }
+    else
+    {
+        transport_rc = (poll_rv == 0) ? TransportRc::timeout_error : TransportRc::server_error;
+    }
+    return bytes_read;
 }
 
 bool LLCC68Agent::handle_error(

@@ -153,6 +153,7 @@ foreach(d ${_deps})
     find_package(${_name} ${_version} REQUIRED)
 endforeach()
 
+find_library(LIBGPIOD_LIBRARY gpiod)
 ###############################################################################
 # Sources
 ###############################################################################
@@ -172,6 +173,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Android" OR
         $<$<BOOL:${UAGENT_SOCKETCAN_PROFILE}>:src/cpp/transport/can/CanAgentLinux.cpp>
         $<$<BOOL:${UAGENT_DISCOVERY_PROFILE}>:src/cpp/transport/discovery/DiscoveryServerLinux.cpp>
         $<$<BOOL:${UAGENT_P2P_PROFILE}>:src/cpp/transport/p2p/AgentDiscovererLinux.cpp>
+        )
+    set(ARDUINO_STAB_SRCS
+        src/cpp/arduino/LoRa_E220.cpp
+        src/cpp/arduino/Stream.cpp
+        src/cpp/arduino/wiring_digital.cpp
+        src/cpp/arduino/Print.cpp
+        src/cpp/arduino/main.cpp
+        src/cpp/arduino/wiring.cpp
+        src/cpp/arduino/WString.cpp
+        src/cpp/arduino/HardwareSerial.cpp
+        )
+    set(LORA_E220_SRCS
+        src/cpp/lora_e220/LoRa_E220.cpp
         )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(TRANSPORT_SRCS
@@ -209,6 +223,8 @@ set(SRCS
     src/cpp/transport/stream_framing/StreamFramingProtocol.cpp
     src/cpp/transport/custom/CustomAgent.cpp
     ${TRANSPORT_SRCS}
+    ${ARDUINO_STAB_SRCS}
+    ${LORA_E220_SRCS}
     $<$<BOOL:${UAGENT_DISCOVERY_PROFILE}>:src/cpp/transport/discovery/DiscoveryServer.cpp>
     $<$<BOOL:${UAGENT_FAST_PROFILE}>:src/cpp/types/TopicPubSubType.cpp>
     $<$<BOOL:${UAGENT_FAST_PROFILE}>:src/cpp/xmlobjects/xmlobjects.cpp>

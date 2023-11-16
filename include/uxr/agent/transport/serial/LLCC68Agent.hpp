@@ -18,6 +18,8 @@
 #include <uxr/agent/transport/serial/SerialAgentLinux.hpp>
 
 #include <termios.h>
+#include "Arduino.h"
+#include "LoRa_E220.h"
 
 namespace eprosima {
 namespace uxr {
@@ -35,6 +37,17 @@ public:
     ~LLCC68Agent();
 
     int getfd() { return poll_fd_.fd; };
+    
+    ssize_t write_data(
+            uint8_t* buf,
+            size_t len,
+            TransportRc& transport_rc);
+
+    ssize_t read_data(
+            uint8_t* buf,
+            size_t len,
+            int timeout,
+            TransportRc& transport_rc);
 
 private:
     bool init() final;
@@ -46,6 +59,11 @@ private:
     const std::string dev_;
     const int open_flags_;
     const termios termios_attrs_;
+    LoRa_E220 lora_e220_;
+    uint16_t addr;
+    byte ADDH;
+	byte ADDL;
+    byte CHAN;
 };
 
 } // namespace uxr
