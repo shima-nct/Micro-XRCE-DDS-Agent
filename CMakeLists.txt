@@ -179,7 +179,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Android" OR
         src/cpp/arduino/Stream.cpp
         src/cpp/arduino/wiring_digital.cpp
         src/cpp/arduino/Print.cpp
-        src/cpp/arduino/main.cpp
         src/cpp/arduino/wiring.cpp
         src/cpp/arduino/WString.cpp
         src/cpp/arduino/HardwareSerial.cpp
