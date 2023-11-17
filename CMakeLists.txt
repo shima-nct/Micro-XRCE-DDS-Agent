@@ -175,7 +175,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Android" OR
         $<$<BOOL:${UAGENT_P2P_PROFILE}>:src/cpp/transport/p2p/AgentDiscovererLinux.cpp>
         )
     set(ARDUINO_STAB_SRCS
-        src/cpp/arduino/LoRa_E220.cpp
         src/cpp/arduino/Stream.cpp
         src/cpp/arduino/wiring_digital.cpp
         src/cpp/arduino/Print.cpp
