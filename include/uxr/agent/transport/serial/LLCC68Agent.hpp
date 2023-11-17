@@ -18,7 +18,6 @@
 #include <uxr/agent/transport/serial/SerialAgentLinux.hpp>
 
 #include <termios.h>
-#include "Arduino.h"
 #include "LoRa_E220.h"
 
 namespace eprosima {

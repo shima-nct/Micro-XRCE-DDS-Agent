@@ -425,9 +425,11 @@ install(
 # Install includes
 install(
     DIRECTORY
-        ${PROJECT_SOURCE_DIR}/include/uxr/agent/
+        # ${PROJECT_SOURCE_DIR}/include/uxr/agent/
+        ${PROJECT_SOURCE_DIR}/include
     DESTINATION
-        ${INCLUDE_INSTALL_DIR}/uxr/agent
+        # ${INCLUDE_INSTALL_DIR}/uxr/agent
+        ${INCLUDE_INSTALL_DIR}
     FILES_MATCHING
         PATTERN "*.hpp"
         PATTERN "*.h"
