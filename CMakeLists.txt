@@ -153,7 +153,7 @@ foreach(d ${_deps})
     find_package(${_name} ${_version} REQUIRED)
 endforeach()
 
-find_library(LIBGPIOD_LIBRARY gpiod)
+find_library(GPIOD_LIBRARY NAMES gpiod PATHS /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib)
 ###############################################################################
 # Sources
 ###############################################################################
@@ -311,16 +311,19 @@ target_compile_options(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         fastcdr
+        ${GPIOD_LIBRARY}
         $<$<PLATFORM_ID:Windows>:ws2_32>
         $<$<PLATFORM_ID:Windows>:iphlpapi>
         $<$<BOOL:${UAGENT_LOGGER_PROFILE}>:spdlog::spdlog>
     PRIVATE
+        ${GPIOD_LIBRARY}
         $<$<BOOL:${UAGENT_FAST_PROFILE}>:fastrtps>
         $<$<BOOL:${UAGENT_P2P_PROFILE}>:microxrcedds_client>
         $<$<BOOL:${UAGENT_P2P_PROFILE}>:microcdr>
         $<$<PLATFORM_ID:Linux>:pthread>
     )
 
+message(STATUS "GPIOD_LIBRARY=${GPIOD_LIBRARY}")
 target_include_directories(${PROJECT_NAME} BEFORE
     PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
