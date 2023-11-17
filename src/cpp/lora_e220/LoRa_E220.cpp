@@ -33,44 +33,42 @@
 
 #ifdef ACTIVATE_SOFTWARE_SERIAL
 LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, UART_BPS_RATE bpsRate){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
     SoftwareSerial* mySerial = new SoftwareSerial((uint8_t)this->txE220pin, (uint8_t)this->rxE220pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
     this->ss = mySerial;
     this->hs = NULL;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, byte auxPin, UART_BPS_RATE bpsRate){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
-    this->auxPin = auxPin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
+    this->auxPin_ = auxPin;
     SoftwareSerial* mySerial = new SoftwareSerial((uint8_t)this->txE220pin, (uint8_t)this->rxE220pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
     this->ss = mySerial;
     this->hs = NULL;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
 
-    this->auxPin = auxPin;
+    this->auxPin_ = auxPin;
 
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
+    this->m0Pin_ = m0Pin;
+    this->m1Pin_ = m1Pin;
 
     SoftwareSerial* mySerial = new SoftwareSerial((uint8_t)this->txE220pin, (uint8_t)this->rxE220pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
     this->ss = mySerial;
     this->hs = NULL;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 #endif
 
 LoRa_E220::LoRa_E220(HardwareSerial* serial, UART_BPS_RATE bpsRate){ //, uint32_t serialConfig
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
 
 	#ifdef ACTIVATE_SOFTWARE_SERIAL
     	this->ss = NULL;
@@ -80,12 +78,11 @@ LoRa_E220::LoRa_E220(HardwareSerial* serial, UART_BPS_RATE bpsRate){ //, uint32_
 
 //    this->serialConfig = serialConfig;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(HardwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate){ // , uint32_t serialConfig
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
-    this->auxPin = auxPin;
+
+    this->auxPin_ = auxPin;
 
 	#ifdef ACTIVATE_SOFTWARE_SERIAL
 		this->ss = NULL;
@@ -95,16 +92,12 @@ LoRa_E220::LoRa_E220(HardwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate)
 
 //    this->serialConfig = serialConfig;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(HardwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate){ //, uint32_t serialConfig
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
 
-    this->auxPin = auxPin;
-
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
+    this->m0Pin_ = m0Pin;
+    this->m1Pin_ = m1Pin;
 
 	#ifdef ACTIVATE_SOFTWARE_SERIAL
 		this->ss = NULL;
@@ -113,13 +106,13 @@ LoRa_E220::LoRa_E220(HardwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin
     this->hs = serial;
 //    this->serialConfig = serialConfig;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 
 #ifdef HARDWARE_SERIAL_SELECTABLE_PIN
 LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, HardwareSerial* serial, UART_BPS_RATE bpsRate, uint32_t serialConfig){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
 
 	#ifdef ACTIVATE_SOFTWARE_SERIAL
     	this->ss = NULL;
@@ -129,12 +122,12 @@ LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, HardwareSerial* serial, UAR
 
     this->hs = serial;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, HardwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate, uint32_t serialConfig){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
-    this->auxPin = auxPin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
+    this->auxPin_ = auxPin;
 
 	#ifdef ACTIVATE_SOFTWARE_SERIAL
 		this->ss = NULL;
@@ -144,16 +137,16 @@ LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, HardwareSerial* serial, byt
 
 	this->hs = serial;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, HardwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate, uint32_t serialConfig){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
 
-    this->auxPin = auxPin;
+    this->auxPin_ = auxPin;
 
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
+    this->m0Pin_ = m0Pin;
+    this->m1Pin_ = m1Pin;
 
 	#ifdef ACTIVATE_SOFTWARE_SERIAL
 		this->ss = NULL;
@@ -163,44 +156,44 @@ LoRa_E220::LoRa_E220(byte txE220pin, byte rxE220pin, HardwareSerial* serial, byt
 
     this->hs = serial;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 #endif
 
 #ifdef ACTIVATE_SOFTWARE_SERIAL
 
 LoRa_E220::LoRa_E220(SoftwareSerial* serial, UART_BPS_RATE bpsRate){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
 
     this->ss = serial;
     this->hs = NULL;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(SoftwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
-    this->auxPin = auxPin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
+    this->auxPin_ = auxPin;
 
     this->ss = serial;
     this->hs = NULL;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 LoRa_E220::LoRa_E220(SoftwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate){
-    this->txE220pin = txE220pin;
-    this->rxE220pin = rxE220pin;
+    this->txE220pin_ = txE220pin;
+    this->rxE220pin_ = rxE220pin;
 
-    this->auxPin = auxPin;
+    this->auxPin_ = auxPin;
 
-    this->m0Pin = m0Pin;
-    this->m1Pin = m1Pin;
+    this->m0Pin_ = m0Pin;
+    this->m1Pin_ = m1Pin;
 
     this->ss = serial;
     this->hs = NULL;
 
-    this->bpsRate = bpsRate;
+    this->bpsRate_ = bpsRate;
 }
 #endif
 
@@ -210,26 +203,26 @@ bool LoRa_E220::begin(){
 	DEBUG_PRINT("TX MIC ---> ");
 	DEBUG_PRINTLN(this->rxE220pin);
 	DEBUG_PRINT("AUX ---> ");
-	DEBUG_PRINTLN(this->auxPin);
+	DEBUG_PRINTLN(this->auxPin_);
 	DEBUG_PRINT("M0 ---> ");
 	DEBUG_PRINTLN(this->m0Pin);
 	DEBUG_PRINT("M1 ---> ");
 	DEBUG_PRINTLN(this->m1Pin);
 
-	if (this->auxPin != -1) {
-		pinMode(this->auxPin, INPUT);
+	if (this->auxPin_ != -1) {
+		pinMode(this->auxPin_, INPUT);
 		DEBUG_PRINTLN("Init AUX pin!");
 	}
-	if (this->m0Pin != -1) {
-		pinMode(this->m0Pin, OUTPUT);
+	if (this->m0Pin_ != -1) {
+		pinMode(this->m0Pin_ , OUTPUT);
 		DEBUG_PRINTLN("Init M0 pin!");
-		digitalWrite(this->m0Pin, HIGH);
+		digitalWrite(this->m0Pin_ , HIGH);
 
 	}
-	if (this->m1Pin != -1) {
-		pinMode(this->m1Pin, OUTPUT);
+	if (this->m1Pin_ != -1) {
+		pinMode(this->m1Pin_, OUTPUT);
 		DEBUG_PRINTLN("Init M1 pin!");
-		digitalWrite(this->m1Pin, HIGH);
+		digitalWrite(this->m1Pin_, HIGH);
 
 	}
 
@@ -240,13 +233,13 @@ bool LoRa_E220::begin(){
 #ifdef HARDWARE_SERIAL_SELECTABLE_PIN
         if(this->txE220pin != -1 && this->rxE220pin != -1) {
         	DEBUG_PRINTLN("PIN SELECTED!!");
-			this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig, this->txE220pin, this->rxE220pin);
+			this->serialDef.begin(*this->hs, this->bpsRate_, this->serialConfig, this->txE220pin, this->rxE220pin);
 		}else{
-			this->serialDef.begin(*this->hs, this->bpsRate, this->serialConfig);
+			this->serialDef.begin(*this->hs, this->bpsRate_, this->serialConfig);
 		}
 #endif
 #ifndef HARDWARE_SERIAL_SELECTABLE_PIN
-        this->serialDef.begin(*this->hs, this->bpsRate);
+        this->serialDef.begin(*this->hs, this->bpsRate_);
 #endif
         while (!this->hs) {
           ; // wait for serial port to connect. Needed for native USB
@@ -256,7 +249,7 @@ bool LoRa_E220::begin(){
     }else if (this->ss){
         DEBUG_PRINTLN("Begin Software Serial");
 
-		this->serialDef.begin(*this->ss, this->bpsRate);
+		this->serialDef.begin(*this->ss, this->bpsRate_);
 	}	else{
         DEBUG_PRINTLN("Begin Software Serial Pin");
         SoftwareSerial* mySerial = new SoftwareSerial((int)this->txE220pin, (int)this->rxE220pin); // "RX TX" // @suppress("Abstract class cannot be instantiated")
@@ -268,7 +261,7 @@ bool LoRa_E220::begin(){
         DEBUG_PRINT("TX Pin: ");
         DEBUG_PRINTLN((int)this->rxE220pin);
 
-		this->serialDef.begin(*this->ss, this->bpsRate);
+		this->serialDef.begin(*this->ss, this->bpsRate_);
 #endif
 	}
 
@@ -297,8 +290,8 @@ Status LoRa_E220::waitCompleteResponse(unsigned long timeout, unsigned int waitN
 
 	// if AUX pin was supplied and look for HIGH state
 	// note you can omit using AUX if no pins are available, but you will have to use delay() to let module finish
-	if (this->auxPin != -1) {
-		while (digitalRead(this->auxPin) == LOW) {
+	if (this->auxPin_ != -1) {
+		while (digitalRead(this->auxPin_) == LOW) {
 			if ((millis() - t) > timeout){
 				result = ERR_E220_TIMEOUT;
 				DEBUG_PRINTLN("Timeout error!");
@@ -357,11 +350,11 @@ int LoRa_E220::available() {
 //		t = 0;
 //	}
 //
-//	if (this->auxPin != -1) {
-//		if (digitalRead(this->auxPin) == HIGH){
+//	if (this->auxPin_ != -1) {
+//		if (digitalRead(this->auxPin_) == HIGH){
 //			return 0;
 //		}else{
-//			while (digitalRead(this->auxPin) == LOW) {
+//			while (digitalRead(this->auxPin_) == LOW) {
 //				if ((millis() - t) > timeout){
 //					DEBUG_PRINTLN("Timeout error!");
 //					return 0;
@@ -496,32 +489,32 @@ Status LoRa_E220::setMode(MODE_TYPE mode) {
 
 	this->managedDelay(40);
 
-	if (this->m0Pin == -1 && this->m1Pin == -1) {
+	if (this->m0Pin_ == -1 && this->m1Pin_ == -1) {
 		DEBUG_PRINTLN(F("The M0 and M1 pins is not set, this mean that you are connect directly the pins as you need!"))
 	}else{
 		switch (mode)
 		{
 		  case MODE_0_NORMAL:
 			// Mode 0 | normal operation
-			digitalWrite(this->m0Pin, LOW);
-			digitalWrite(this->m1Pin, LOW);
+			digitalWrite(this->m0Pin_ , LOW);
+			digitalWrite(this->m1Pin_, LOW);
 			DEBUG_PRINTLN("MODE NORMAL!");
 			break;
 		  case MODE_1_WOR_TRANSMITTER:
-			digitalWrite(this->m0Pin, HIGH);
-			digitalWrite(this->m1Pin, LOW);
+			digitalWrite(this->m0Pin_ , HIGH);
+			digitalWrite(this->m1Pin_, LOW);
 			DEBUG_PRINTLN("MODE WOR!");
 			break;
 		  case MODE_2_WOR_RECEIVER:
 //		  case MODE_2_PROGRAM:
-			digitalWrite(this->m0Pin, LOW);
-			digitalWrite(this->m1Pin, HIGH);
+			digitalWrite(this->m0Pin_ , LOW);
+			digitalWrite(this->m1Pin_, HIGH);
 			DEBUG_PRINTLN("MODE RECEIVING!");
 			break;
 		  case MODE_3_CONFIGURATION:
 			// Mode 3 | Setting operation
-			digitalWrite(this->m0Pin, HIGH);
-			digitalWrite(this->m1Pin, HIGH);
+			digitalWrite(this->m0Pin_ , HIGH);
+			digitalWrite(this->m1Pin_, HIGH);
 			DEBUG_PRINTLN("MODE SLEEP CONFIG!");
 			break;
 
@@ -537,14 +530,14 @@ Status LoRa_E220::setMode(MODE_TYPE mode) {
 	Status res = this->waitCompleteResponse(1000);
 
 	if (res == E220_SUCCESS){
-		this->mode = mode;
+		this->mode_ = mode;
 	}
 
 	return res;
 }
 
 MODE_TYPE LoRa_E220::getMode(){
-	return this->mode;
+	return this->mode_;
 }
 
 bool LoRa_E220::writeProgramCommand(PROGRAM_COMMAND cmd, REGISTER_ADDRESS addr, PACKET_LENGHT pl){
@@ -564,7 +557,7 @@ ResponseStructContainer LoRa_E220::getConfiguration(){
 	rc.status.code = checkUARTConfiguration(MODE_3_PROGRAM);
 	if (rc.status.code!=E220_SUCCESS) return rc;
 
-	MODE_TYPE prevMode = this->mode;
+	MODE_TYPE prevMode = this->mode_;
 
 	rc.status.code = this->setMode(MODE_3_PROGRAM);
 	if (rc.status.code!=E220_SUCCESS) return rc;
@@ -597,7 +590,7 @@ ResponseStructContainer LoRa_E220::getConfiguration(){
 }
 
 RESPONSE_STATUS LoRa_E220::checkUARTConfiguration(MODE_TYPE mode){
-	if (mode==MODE_3_PROGRAM && this->bpsRate!=UART_BPS_RATE_9600){
+	if (mode==MODE_3_PROGRAM && this->bpsRate_!=UART_BPS_RATE_9600){
 		return ERR_E220_WRONG_UART_CONFIG;
 	}
 	return E220_SUCCESS;
@@ -609,7 +602,7 @@ ResponseStatus LoRa_E220::setConfiguration(Configuration configuration, PROGRAM_
 	rc.code = checkUARTConfiguration(MODE_3_PROGRAM);
 	if (rc.code!=E220_SUCCESS) return rc;
 
-	MODE_TYPE prevMode = this->mode;
+	MODE_TYPE prevMode = this->mode_;
 
 	rc.code = this->setMode(MODE_3_PROGRAM);
 	if (rc.code!=E220_SUCCESS) return rc;
@@ -653,7 +646,7 @@ ResponseStructContainer LoRa_E220::getModuleInformation(){
 	rc.status.code = checkUARTConfiguration(MODE_3_PROGRAM);
 	if (rc.status.code!=E220_SUCCESS) return rc;
 
-	MODE_TYPE prevMode = this->mode;
+	MODE_TYPE prevMode = this->mode_;
 
 	rc.status.code = this->setMode(MODE_3_PROGRAM);
 	if (rc.status.code!=E220_SUCCESS) return rc;
@@ -704,7 +697,7 @@ ResponseStatus LoRa_E220::resetModule(){
 //	status.code = checkUARTConfiguration(MODE_2_PROGRAM);
 //	if (status.code!=E220_SUCCESS) return status;
 //
-//	MODE_TYPE prevMode = this->mode;
+//	MODE_TYPE prevMode = this->mode_;
 //
 //	status.code = this->setMode(MODE_2_PROGRAM);
 //	if (status.code!=E220_SUCCESS) return status;

@@ -30,18 +30,19 @@ LLCC68Agent::LLCC68Agent(
     , dev_{dev}
     , open_flags_{open_flags}
     , termios_attrs_{termios_attrs}
-    , addr{18030}
-    , ADDH{(addr >> 8) & 0xFF}
-    , ADDL{addr & 0xFF}
-    , CHAN{28}
-    , lora_e220_(&Serial1)
-{
-}
-
-LLCC68Agent::~LLCC68Agent()
-{
-    try
+    , lora_addr{18030u}
+        , ADDH{(lora_addr >> 8) & 0xFFu}
+        , ADDL{lora_addr & 0xFFu}
+        , CHAN{28u}
+        , lora_e220_(&Serial1)
     {
+    }
+
+    LLCC68Agent::~LLCC68Agent()
+    {
+        try
+        {
+            stop();
         stop();
     }
     catch (std::exception& e)

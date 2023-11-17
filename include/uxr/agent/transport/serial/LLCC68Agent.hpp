@@ -59,7 +59,7 @@ private:
     const int open_flags_;
     const termios termios_attrs_;
     LoRa_E220 lora_e220_;
-    uint16_t addr;
+    uint16_t lora_addr;
     byte ADDH;
 	byte ADDL;
     byte CHAN;

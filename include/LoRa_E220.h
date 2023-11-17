@@ -54,6 +54,7 @@
 // #endif
 
 #include "Arduino.h"
+#include <vector>
 
 #define MAX_SIZE_TX_PACKET 200
 
@@ -238,7 +239,7 @@ struct ConfigurationMessage
 	byte specialCommand1 = 0xCF;
 	byte specialCommand2 = 0xCF;
 
-	unsigned char message[];
+	unsigned char message[1];
 };
 
 //struct FixedStransmission {
