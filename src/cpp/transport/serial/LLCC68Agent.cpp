@@ -13,7 +13,11 @@
 // limitations under the License.
 
 #include <uxr/agent/transport/serial/LLCC68Agent.hpp>
+#include <uxr/agent/transport/serial/SerialAgentLinux.hpp>
+#include <uxr/agent/utils/Conversion.hpp>
+#include <uxr/agent/logger/Logger.hpp>
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -31,11 +35,15 @@ LLCC68Agent::LLCC68Agent(
     , open_flags_{open_flags}
     , termios_attrs_{termios_attrs}
     , lora_addr{18030u}
-        , ADDH{(lora_addr >> 8) & 0xFFu}
-        , ADDL{lora_addr & 0xFFu}
-        , CHAN{28u}
-        , lora_e220_(&Serial1)
+    , ADDH{(lora_addr >> 8) & 0xFFu}
+    , ADDL{lora_addr & 0xFFu}
+    , CHAN{28u}
+    , lora_e220_(&Serial1)
     {
+        framing_io_ = FramingIO(
+        addr,
+        std::bind(&LLCC68Agent::write_data, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), 
+        std::bind(&LLCC68Agent::read_data, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     }
 
     LLCC68Agent::~LLCC68Agent()
@@ -95,7 +103,7 @@ bool LLCC68Agent::init()
     while (serial_exist != 0);
 
     // poll_fd_.fd = open(dev_.c_str(), open_flags_);
-    poll_fd_.fd = Serial1.open(dev_.c_str(), termios_attrs_.c_ispeed);
+    poll_fd_.fd = Serial1.open(dev_.c_str(),termios_attrs_.c_ispeed);
     lora_e220_.begin();
     if (0 < poll_fd_.fd)
     {
@@ -220,7 +228,7 @@ ssize_t LLCC68Agent::read_data(
     {
         transport_rc = TransportRc::server_error;;
     }
-    else if (0 < poll_rv && lora_e220_.available() > 0)
+    else if (0 < poll_rv)
     {
         // bytes_read = read(poll_fd_.fd, buf, len);
         ResponseContainer rsc = lora_e220_.receiveMessage();
