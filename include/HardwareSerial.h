@@ -46,19 +46,12 @@ public:
     ~HardwareSerial();
 
     int open(const std::string &device, unsigned long baud = 9600, uint8_t config = SERIAL_8N1);
-    void begin(unsigned long baud, uint8_t config = SERIAL_8N1)
-    {
-#ifdef DEFAULT_DEVICE
-        open(DEFAULT_DEVICE, getBaudRate(baud), config);
-#else
-        open("/dev/ttyS0", getBaudRate(baud), config);
-#endif
-    }
+    void begin(unsigned long baud = 9600, uint8_t config = SERIAL_8N1);
 
-    int available();
+    int available() override;
     void flush();
-    int peek(void);
-    int read(void);
+    int peek(void) override;
+    int read(void) override;
     size_t read(uint8_t *buffer, size_t size);
     inline size_t read(char *buffer, size_t size)
     {
@@ -73,11 +66,6 @@ public:
     void end();
     int getFd() { return serial_fd; }
 
-private:
-    int serial_fd;
-    struct termios tty;
-    int peek_buffer;
-    bool peek_flag;
     speed_t getBaudRate(unsigned long baudrate)
     {
         switch (baudrate)
@@ -125,6 +113,12 @@ private:
             return -1; // 不明またはサポートされていないボーレート
         }
     }
+
+private:
+    int serial_fd;
+    struct termios tty;
+    int peek_buffer;
+    bool peek_flag;
 };
 
 extern HardwareSerial Serial1;
