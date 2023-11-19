@@ -34,11 +34,11 @@ LLCC68Agent::LLCC68Agent(
     , dev_{dev}
     , open_flags_{open_flags}
     , termios_attrs_{termios_attrs}
+    , lora_e220_(&Serial1, Serial1.getBaudRate(termios_attrs.c_ispeed))
     , lora_addr{18030u}
-    , ADDH{(lora_addr >> 8) & 0xFFu}
-    , ADDL{lora_addr & 0xFFu}
-    , CHAN{28u}
-    , lora_e220_(&Serial1)
+    , ADDH{static_cast<uint8_t>((lora_addr >> 8) & 0xFFu)}
+    , ADDL{static_cast<uint8_t>(lora_addr & 0xFFu)}
+    , CHAN{12u}
     {
         framing_io_ = FramingIO(
         addr,
@@ -103,15 +103,15 @@ bool LLCC68Agent::init()
     while (serial_exist != 0);
 
     // poll_fd_.fd = open(dev_.c_str(), open_flags_);
-    poll_fd_.fd = Serial1.open(dev_.c_str(),termios_attrs_.c_ispeed);
+    poll_fd_.fd = Serial1.open(dev_.c_str());
     lora_e220_.begin();
     if (0 < poll_fd_.fd)
     {
          rv = true;
-//         struct termios new_attrs;
-//         memset(&new_attrs, 0, sizeof(new_attrs));
-//         if (0 == tcgetattr(poll_fd_.fd, &new_attrs))
-//         {
+        struct termios new_attrs;
+        memset(&new_attrs, 0, sizeof(new_attrs));
+        if (0 == tcgetattr(poll_fd_.fd, &new_attrs))
+        {
 //             new_attrs.c_cflag = termios_attrs_.c_cflag;
 //             new_attrs.c_lflag = termios_attrs_.c_lflag;
 //             new_attrs.c_iflag = termios_attrs_.c_iflag;
@@ -126,33 +126,33 @@ bool LLCC68Agent::init()
 //             cfsetospeed(&new_attrs, termios_attrs_.c_ospeed);
 // #endif
 
-//             if (0 == tcsetattr(poll_fd_.fd, TCSANOW, &new_attrs))
-//             {
-//                 rv = true;
-//                 poll_fd_.events = POLLIN;
+            if (0 == tcsetattr(poll_fd_.fd, TCSANOW, &new_attrs))
+            {
+                rv = true;
+                poll_fd_.events = POLLIN;
 
-//                 tcflush(poll_fd_.fd, TCIOFLUSH);
+                tcflush(poll_fd_.fd, TCIOFLUSH);
 
-//                 UXR_AGENT_LOG_INFO(
-//                     UXR_DECORATE_GREEN("running..."),
-//                     "fd: {}",
-//                     poll_fd_.fd);
-//             }
-//             else
-//             {
-//                 UXR_AGENT_LOG_ERROR(
-//                     UXR_DECORATE_RED("set termios attributes error"),
-//                     "errno: {}",
-//                     errno);
-//             }
-//         }
-//         else
-//         {
-//             UXR_AGENT_LOG_ERROR(
-//                 UXR_DECORATE_RED("get termios attributes error"),
-//                 "errno: {}",
-//                 errno);
-//         }
+                UXR_AGENT_LOG_INFO(
+                    UXR_DECORATE_GREEN("running..."),
+                    "fd: {}",
+                    poll_fd_.fd);
+            }
+            else
+            {
+                UXR_AGENT_LOG_ERROR(
+                    UXR_DECORATE_RED("set termios attributes error"),
+                    "errno: {}",
+                    errno);
+            }
+        }
+        else
+        {
+            UXR_AGENT_LOG_ERROR(
+                UXR_DECORATE_RED("get termios attributes error"),
+                "errno: {}",
+                errno);
+        }
     }
     else
     {
@@ -192,6 +192,7 @@ bool LLCC68Agent::fini()
     }
 
     poll_fd_.fd = -1;
+    fifo_buffer_ = std::queue<uint8_t>();
     return rv;
 }
 
@@ -228,22 +229,34 @@ ssize_t LLCC68Agent::read_data(
     {
         transport_rc = TransportRc::server_error;;
     }
-    else if (0 < poll_rv)
+    else if (0 < poll_rv || 0 < fifo_buffer_.size())
     {
         // bytes_read = read(poll_fd_.fd, buf, len);
-        ResponseContainer rsc = lora_e220_.receiveMessage();
-        bytes_read = rsc.data.length();
         // if (0 > bytes_read)
         // {
         //     transport_rc = TransportRc::server_error;
         // }
-        if (E220_SUCCESS == rsc.status.code)
-        {
-            rsc.data.getBytes(buf, bytes_read);
+
+        if(0 < poll_rv){
+            ResponseContainer rsc = lora_e220_.receiveMessage();
+            if (E220_SUCCESS == rsc.status.code)
+            {
+                for(unsigned int i = 0; i < rsc.data.length(); i++)
+                {
+                    fifo_buffer_.push(static_cast<uint8_t>(rsc.data[i]));
+                }
+            }
+            else
+            {
+                transport_rc = TransportRc::server_error;
+            }
         }
-        else
+
+        bytes_read = std::min(len, fifo_buffer_.size());
+        for(unsigned int i = 0; i < bytes_read; i++)
         {
-            transport_rc = TransportRc::server_error;
+            buf[i] = fifo_buffer_.front();
+            fifo_buffer_.pop();
         }
     }
     else

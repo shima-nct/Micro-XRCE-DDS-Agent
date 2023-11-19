@@ -18,7 +18,9 @@
 #include <uxr/agent/transport/serial/SerialAgentLinux.hpp>
 
 #include <termios.h>
+#include "HardwareSerial.h"
 #include "LoRa_E220.h"
+#include <queue>
 
 namespace eprosima {
 namespace uxr {
@@ -63,6 +65,7 @@ private:
     byte ADDH;
 	byte ADDL;
     byte CHAN;
+    std::queue<uint8_t> fifo_buffer_;
 };
 
 } // namespace uxr
