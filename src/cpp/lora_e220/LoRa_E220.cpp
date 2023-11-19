@@ -96,7 +96,8 @@ LoRa_E220::LoRa_E220(HardwareSerial* serial, byte auxPin, UART_BPS_RATE bpsRate)
 }
 LoRa_E220::LoRa_E220(HardwareSerial* serial, byte auxPin, byte m0Pin, byte m1Pin, UART_BPS_RATE bpsRate){ //, uint32_t serialConfig
 
-    this->m0Pin_ = m0Pin;
+    this->auxPin_ = auxPin;
+	this->m0Pin_ = m0Pin;
     this->m1Pin_ = m1Pin;
 
 	#ifdef ACTIVATE_SOFTWARE_SERIAL
@@ -767,8 +768,8 @@ ResponseContainer LoRa_E220::receiveMessageUntil(char delimiter){
 ResponseContainer LoRa_E220::receiveInitialMessage(uint8_t size){
 	ResponseContainer rc;
 	rc.status.code = E220_SUCCESS;
-	char buff[size];
-	uint8_t len = this->serialDef.stream->readBytes(buff, size);
+	std::vector<char> buff(size);
+	uint8_t len = this->serialDef.stream->readBytes(buff.data(), size);
 	if (len!=size) {
 		if (len==0){
 			rc.status.code = ERR_E220_NO_RESPONSE_FROM_DEVICE;
@@ -778,7 +779,7 @@ ResponseContainer LoRa_E220::receiveInitialMessage(uint8_t size){
 		return rc;
 	}
 
-	rc.data = buff; // malloc(sizeof (moduleInformation));
+	rc.data = buff.data(); // malloc(sizeof (moduleInformation));
 
 	return rc;
 }
@@ -824,8 +825,8 @@ ResponseStatus LoRa_E220::sendMessage(const String message){
 	byte size = message.length(); // sizeof(message.c_str())+1;
 	DEBUG_PRINT(F(" size: "));
 	DEBUG_PRINTLN(size);
-	char messageFixed[size];
-	memcpy(messageFixed,message.c_str(),size);
+	std::vector<char> messageFixed(size);
+	memcpy(messageFixed.data(),message.c_str(),size);
 	DEBUG_PRINTLN(F(" memcpy "));
 
 	ResponseStatus status;
@@ -867,9 +868,9 @@ ResponseStatus LoRa_E220::sendFixedMessage(byte ADDH, byte ADDL, byte CHAN, cons
 //	if (status.code!=E220_SUCCESS) return status;
 //
 //	return status;
-	char messageFixed[size];
-	memcpy(messageFixed,message.c_str(),size);
-	return this->sendFixedMessage(ADDH, ADDL, CHAN, (uint8_t *)messageFixed, size);
+	std::vector<char> messageFixed(size);
+	memcpy(messageFixed.data(), message.c_str(), size);
+	return this->sendFixedMessage(ADDH, ADDL, CHAN, messageFixed.data(), size);
 }
 ResponseStatus LoRa_E220::sendBroadcastFixedMessage(byte CHAN, const String message){
 	return this->sendFixedMessage(BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN, message);
@@ -880,7 +881,7 @@ typedef struct fixedStransmission
 	byte ADDH = 0;
 	byte ADDL = 0;
 	byte CHAN = 0;
-	unsigned char message[];
+	unsigned char message[1];
 }FixedStransmission;
 
 FixedStransmission *init_stack(int m){
