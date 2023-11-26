@@ -155,6 +155,17 @@ int HardwareSerial::available()
 
 int HardwareSerial::read()
 {
+    char buf;
+    size_t n = readBytes( &buf, 1ul);
+    if(n == 0)
+    {
+        return -1;
+    }
+    return buf;
+}
+
+size_t HardwareSerial::readBytes( char *buffer, size_t length) 
+{
     if (peek_flag)
     {
         peek_flag = false;
@@ -166,10 +177,10 @@ int HardwareSerial::read()
 
     if (n <= 0)
     {
-        return -1;
+        return 0;
     }
 
-    return buf;
+    return n;
 }
 
 size_t HardwareSerial::write(const uint8_t *buffer, size_t size)

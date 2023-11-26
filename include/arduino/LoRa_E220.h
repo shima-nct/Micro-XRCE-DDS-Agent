@@ -233,6 +233,11 @@ struct ResponseContainer {
 	byte rssi;
 	ResponseStatus status;
 };
+struct ResponseBinaryMessageContainer {
+	std::vector<byte> data;
+	byte rssi;
+	ResponseStatus status;
+};
 
 struct ConfigurationMessage
 {
@@ -293,7 +298,10 @@ class LoRa_E220 {
 	    ResponseContainer receiveMessageUntil(char delimiter = '\0');
 		ResponseStructContainer receiveMessage(const uint8_t size);
 		ResponseStructContainer receiveMessageRSSI(const uint8_t size);
-	        
+
+		ResponseBinaryMessageContainer receiveBinaryMessage(const uint8_t size);
+	    ResponseBinaryMessageContainer receiveBinaryMessageComplete(const uint8_t size, bool enableRSSI);
+
         ResponseStructContainer receiveMessageComplete(const uint8_t size, bool enableRSSI);
 		ResponseContainer receiveMessageComplete(bool enableRSSI);
 	
@@ -306,6 +314,8 @@ class LoRa_E220 {
         ResponseStatus sendFixedMessage(byte ADDH,byte ADDL, byte CHAN, const void *message, const uint8_t size);
         ResponseStatus sendBroadcastFixedMessage(byte CHAN, const void *message, const uint8_t size);
         ResponseStatus sendBroadcastFixedMessage(byte CHAN, const String message);
+
+        ResponseStatus sendFixedBinaryMessage(byte ADDH,byte ADDL, byte CHAN, std::vector<byte> message);
 
 		ResponseContainer receiveInitialMessage(const uint8_t size);
 
@@ -389,6 +399,9 @@ class LoRa_E220 {
 		Status sendStruct(void *structureManaged, uint16_t size_);
 		Status receiveStruct(void *structureManaged, uint16_t size_);
 		bool writeProgramCommand(PROGRAM_COMMAND cmd, REGISTER_ADDRESS addr, PACKET_LENGHT pl);
+
+		Status sendBytes(std::vector<byte> bytes);
+		Status receiveBytes(std::vector<byte> &bytes);
 
 		RESPONSE_STATUS checkUARTConfiguration(MODE_TYPE mode);
 

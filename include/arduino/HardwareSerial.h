@@ -52,6 +52,7 @@ public:
     void flush();
     int peek(void) override;
     int read(void) override;
+    size_t readBytes( char *buffer, size_t length) override;
     size_t read(uint8_t *buffer, size_t size);
     inline size_t read(char *buffer, size_t size)
     {
@@ -62,7 +63,7 @@ public:
     inline size_t write(long n) { return write((uint8_t)n); }
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
     inline size_t write(int n) { return write((uint8_t)n); }
-    size_t write(const uint8_t *buffer, size_t size);
+    size_t write(const uint8_t *buffer, size_t size) override;
     void end();
     int getFd() { return serial_fd; }
 

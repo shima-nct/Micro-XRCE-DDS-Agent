@@ -18,7 +18,7 @@
 #include <uxr/agent/transport/serial/SerialAgentLinux.hpp>
 
 #include <termios.h>
-#include "HardwareSerial.h"
+#include <Arduino.h>
 #include "LoRa_E220.h"
 #include <queue>
 

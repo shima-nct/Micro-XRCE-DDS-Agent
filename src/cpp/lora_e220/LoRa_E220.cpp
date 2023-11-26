@@ -477,6 +477,57 @@ Status LoRa_E220::receiveStruct(void *structureManaged, uint16_t size_) {
 	return result;
 }
 
+
+Status LoRa_E220::sendBytes(std::vector<byte> bytes) {
+		if (bytes.size() > MAX_SIZE_TX_PACKET + 2){
+			return ERR_E220_PACKET_TOO_BIG;
+		}
+
+		Status result = E220_SUCCESS;
+
+		uint8_t len = this->serialDef.stream->write(bytes.data(), bytes.size());
+		if (len!=bytes.size()){
+			DEBUG_PRINT(F("Send... len:"))
+			DEBUG_PRINT(len);
+			DEBUG_PRINT(F(" size:"))
+			DEBUG_PRINT(bytes.size());
+			if (len==0){
+				result = ERR_E220_NO_RESPONSE_FROM_DEVICE;
+			}else{
+				result = ERR_E220_DATA_SIZE_NOT_MATCH;
+			}
+		}
+		if (result != E220_SUCCESS) return result;
+
+		result = this->waitCompleteResponse(5000, 5000);
+		if (result != E220_SUCCESS) return result;
+        // DEBUG_PRINT(F("Clear buffer..."))
+        // this->cleanUARTBuffer();
+
+		DEBUG_PRINTLN(F("ok!"))
+
+		return result;
+}
+
+
+Status LoRa_E220::receiveBytes(std::vector<byte> &bytes) {
+
+	Status result = E220_SUCCESS;
+
+	uint8_t len = this->serialDef.stream->readBytes(bytes.data(), bytes.size());
+	bytes.resize(len);
+	
+	DEBUG_PRINT("Available buffer: ");
+	DEBUG_PRINT(len);
+	DEBUG_PRINT(" structure size: ");
+	DEBUG_PRINTLN(bytes.data.size());
+
+	result = this->waitCompleteResponse(1000);
+
+	return result;
+}
+
+
 /*
 
 method to set the mode (program, normal, etc.)
@@ -812,6 +863,28 @@ ResponseStructContainer LoRa_E220::receiveMessageComplete(const uint8_t size, bo
 	return rc;
 }
 
+ResponseBinaryMessageContainer LoRa_E220::receiveBinaryMessage(const uint8_t size){
+	return LoRa_E220::receiveBinaryMessageComplete(size, false);
+}
+
+ResponseBinaryMessageContainer LoRa_E220::receiveBinaryMessageComplete(const uint8_t size, bool rssiEnabled=false){
+	ResponseBinaryMessageContainer rc;
+	size_t size_ = size + (rssiEnabled?1:0);
+	rc.data = std::vector<byte>(size_);
+	rc.status.code = this->receiveBytes(rc.data);
+	
+	if(rc.data.size() != size_){
+		rc.status.code = ERR_E220_DATA_SIZE_NOT_MATCH;
+	}
+
+	if (rssiEnabled){
+		rc.rssi = rc.data[rc.data.size()-1];
+		rc.data.pop_back();
+	}
+
+	return rc;
+}
+
 ResponseStatus LoRa_E220::sendMessage(const void *message, const uint8_t size){
 	ResponseStatus status;
 	status.code = this->sendStruct((uint8_t *)message, size);
@@ -923,6 +996,29 @@ ResponseStatus LoRa_E220::sendFixedMessage( byte ADDH,byte ADDL, byte CHAN, cons
 
 	ResponseStatus status;
 	status.code = this->sendStruct((uint8_t *)fixedStransmission, size+3);
+
+	free(fixedStransmission);
+
+	if (status.code!=E220_SUCCESS) return status;
+
+	return status;
+}
+
+ResponseStatus LoRa_E220::sendFixedBinaryMessage( byte ADDH,byte ADDL, byte CHAN, std::vector<byte> message){
+
+	DEBUG_PRINT(ADDH);
+
+	FixedStransmission *fixedStransmission = init_stack(message.size());
+
+	fixedStransmission->ADDH = ADDH;
+	fixedStransmission->ADDL = ADDL;
+	fixedStransmission->CHAN = CHAN;
+
+	memcpy(fixedStransmission->message, message.data(), message.size());
+	std::vector<byte> bytes(message.size()+3);
+	memcpy(bytes.data(), fixedStransmission, message.size()+3);		
+	ResponseStatus status;
+	status.code = this->sendBytes(bytes);
 
 	free(fixedStransmission);
 

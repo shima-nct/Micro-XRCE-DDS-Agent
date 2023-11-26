@@ -328,6 +328,7 @@ target_include_directories(${PROJECT_NAME} BEFORE
     PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/arduino>
         $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>
         $<TARGET_PROPERTY:fastcdr,INTERFACE_INCLUDE_DIRECTORIES>
     PRIVATE
@@ -427,11 +428,13 @@ install(
 # Install includes
 install(
     DIRECTORY
-        # ${PROJECT_SOURCE_DIR}/include/uxr/agent/
-        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/uxr/agent/
+        # ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/arduino
     DESTINATION
-        # ${INCLUDE_INSTALL_DIR}/uxr/agent
-        ${INCLUDE_INSTALL_DIR}
+        ${INCLUDE_INSTALL_DIR}/uxr/agent
+        # ${INCLUDE_INSTALL_DIR}
+        # ${INCLUDE_INSTALL_DIR}/include/arduino
     FILES_MATCHING
         PATTERN "*.hpp"
         PATTERN "*.h"

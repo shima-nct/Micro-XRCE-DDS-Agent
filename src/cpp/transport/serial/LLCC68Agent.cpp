@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <unistd.h>
-
+#include <time.h>
 namespace eprosima {
 namespace uxr {
 
@@ -196,19 +196,58 @@ bool LLCC68Agent::fini()
     return rv;
 }
 
+void printBuffer(const unsigned char *buffer, size_t length)
+{
+    printf("len: %zu, data: \n", length);
+    for (size_t i = 0; i < length; ++i)
+    {
+        if (i % 0x20 == 0)
+        {
+            printf("%04lX: ", i);
+        }
+        printf("%02X ", buffer[i]);
+        if ((i + 1) % 0x20 == 0 || i + 1 == length)
+        {
+            printf("\n");
+        }
+    }
+}
+
 ssize_t LLCC68Agent::write_data(
         uint8_t* buf,
         size_t len,
         TransportRc& transport_rc)
 {
+    // std::vector<byte> message(buf, buf+len);
+    const size_t lora_header_size = 3;
+    std::vector<byte> message(len + lora_header_size);
+    message.data()[0] = ADDH;
+    message.data()[1] = ADDL;
+    message.data()[2] = CHAN;
+    memmove(message.data() + lora_header_size, buf, len);
     size_t rv = 0;
-    // ssize_t bytes_written = ::write(poll_fd_.fd, buf, len);
-    ResponseStatus rs = lora_e220_.sendFixedMessage(ADDH, ADDL, CHAN, (void *)buf, len);
+    ssize_t bytes_written = ::write(poll_fd_.fd, message.data(), message.size());
+    bytes_written -= lora_header_size;
+    int ret = tcdrain(poll_fd_.fd);
+    struct timespec req, rem;
+    // 0.1秒（100ミリ秒）を設定
+    req.tv_sec = 0;          // 秒
+    req.tv_nsec = 50000000; // ナノ秒
 
-    // if (0 < bytes_written)
-    if (E220_SUCCESS == rs.code)
+    // nanosleepを呼び出す
+    if (nanosleep(&req, &rem) < 0) {
+        std::cout << "Can't sleep: ";
+    }
+    // bytes_written -= 3;
+    // ResponseStatus rs = lora_e220_.sendFixedBinaryMessage(ADDH, ADDL, CHAN, message);
+
+    if (-1 !=bytes_written && ret == 0)
+    // if (E220_SUCCESS == rs.code)
     {
-        rv = len;
+        rv = bytes_written;
+
+        std::cout << "Sent: ";
+        printBuffer(message.data(), bytes_written);
     }
     else
     {
@@ -229,35 +268,25 @@ ssize_t LLCC68Agent::read_data(
     {
         transport_rc = TransportRc::server_error;;
     }
-    else if (0 < poll_rv || 0 < fifo_buffer_.size())
+    else if (0 < poll_rv)
     {
-        // bytes_read = read(poll_fd_.fd, buf, len);
-        // if (0 > bytes_read)
+        bytes_read = read(poll_fd_.fd, buf, len);
+        printf("Received: ");
+        printBuffer(buf, bytes_read);
+        if (0 > bytes_read)
+        {
+            transport_rc = TransportRc::server_error;
+        }
+        // ResponseBinaryMessageContainer rc = lora_e220_.receiveBinaryMessage(len);
+        // if (E220_SUCCESS == rc.status.code)
+        // {
+        //     bytes_read = rc.data.size();
+        //     memcpy(buf, rc.data.data(), bytes_read);
+        // }
+        // else
         // {
         //     transport_rc = TransportRc::server_error;
         // }
-
-        if(0 < poll_rv){
-            ResponseContainer rsc = lora_e220_.receiveMessage();
-            if (E220_SUCCESS == rsc.status.code)
-            {
-                for(unsigned int i = 0; i < rsc.data.length(); i++)
-                {
-                    fifo_buffer_.push(static_cast<uint8_t>(rsc.data[i]));
-                }
-            }
-            else
-            {
-                transport_rc = TransportRc::server_error;
-            }
-        }
-
-        bytes_read = std::min(len, fifo_buffer_.size());
-        for(unsigned int i = 0; i < bytes_read; i++)
-        {
-            buf[i] = fifo_buffer_.front();
-            fifo_buffer_.pop();
-        }
     }
     else
     {
